@@ -148,6 +148,9 @@ const PSBT_ELEMENTS_IN_ISSUANCE_BLIND_VALUE_PROOF: u8 = 0x0f;
 /// in PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS. If provided,
 /// PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT must be provided too.
 const PSBT_ELEMENTS_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF: u8 = 0x10;
+/// Issuance Denomination: The value for number of decimals used for amount.
+/// Default 8, but could be less or more
+const PSBT_ELEMENTS_IN_ISSUANCE_ASSET_DENOMINATION: u8 = 0x7f;
 /// A key-value map for an input of the corresponding index in the unsigned
 /// transaction.
 #[derive(Clone, Debug, PartialEq)]
@@ -265,6 +268,8 @@ pub struct Input {
     pub issuance_blinding_nonce: Option<Tweak>,
     /// Issuance asset entropy
     pub issuance_asset_entropy: Option<[u8; 32]>,
+    /// Issuance asset denomination
+    pub issuance_asset_denomination: Option<u8>,
     /// input utxo rangeproof
     pub in_utxo_rangeproof: Option<Box<RangeProof>>,
     /// Proof that blinded issuance matches the commitment
@@ -287,7 +292,7 @@ pub struct Input {
 
 impl Default for Input {
     fn default() -> Self {
-        Self { non_witness_utxo: Default::default(), witness_utxo: Default::default(), partial_sigs: Default::default(), sighash_type: Default::default(), redeem_script: Default::default(), witness_script: Default::default(), bip32_derivation: Default::default(), final_script_sig: Default::default(), final_script_witness: Default::default(), ripemd160_preimages: Default::default(), sha256_preimages: Default::default(), hash160_preimages: Default::default(), hash256_preimages: Default::default(), previous_txid: Txid::all_zeros(), previous_output_index: Default::default(), sequence: Default::default(), required_time_locktime: Default::default(), required_height_locktime: Default::default(), tap_key_sig: Default::default(), tap_script_sigs: Default::default(), tap_scripts: Default::default(), tap_key_origins: Default::default(), tap_internal_key: Default::default(), tap_merkle_root: Default::default(), issuance_value_amount: Default::default(), issuance_value_comm: Default::default(), issuance_value_rangeproof: Default::default(), issuance_keys_rangeproof: Default::default(), pegin_tx: Default::default(), pegin_txout_proof: Default::default(), pegin_genesis_hash: Default::default(), pegin_claim_script: Default::default(), pegin_value: Default::default(), pegin_witness: Default::default(), issuance_inflation_keys: Default::default(), issuance_inflation_keys_comm: Default::default(), issuance_blinding_nonce: Default::default(), issuance_asset_entropy: Default::default(), in_utxo_rangeproof: Default::default(), in_issuance_blind_value_proof: Default::default(), in_issuance_blind_inflation_keys_proof: Default::default(), proprietary: Default::default(), unknown: Default::default() }
+        Self { non_witness_utxo: Default::default(), witness_utxo: Default::default(), partial_sigs: Default::default(), sighash_type: Default::default(), redeem_script: Default::default(), witness_script: Default::default(), bip32_derivation: Default::default(), final_script_sig: Default::default(), final_script_witness: Default::default(), ripemd160_preimages: Default::default(), sha256_preimages: Default::default(), hash160_preimages: Default::default(), hash256_preimages: Default::default(), previous_txid: Txid::all_zeros(), previous_output_index: Default::default(), sequence: Default::default(), required_time_locktime: Default::default(), required_height_locktime: Default::default(), tap_key_sig: Default::default(), tap_script_sigs: Default::default(), tap_scripts: Default::default(), tap_key_origins: Default::default(), tap_internal_key: Default::default(), tap_merkle_root: Default::default(), issuance_value_amount: Default::default(), issuance_value_comm: Default::default(), issuance_value_rangeproof: Default::default(), issuance_keys_rangeproof: Default::default(), pegin_tx: Default::default(), pegin_txout_proof: Default::default(), pegin_genesis_hash: Default::default(), pegin_claim_script: Default::default(), pegin_value: Default::default(), pegin_witness: Default::default(), issuance_inflation_keys: Default::default(), issuance_inflation_keys_comm: Default::default(), issuance_blinding_nonce: Default::default(), issuance_asset_entropy: Default::default(), issuance_asset_denomination: Default::default(), in_utxo_rangeproof: Default::default(), in_issuance_blind_value_proof: Default::default(), in_issuance_blind_inflation_keys_proof: Default::default(), proprietary: Default::default(), unknown: Default::default() }
     }
 }
 
@@ -452,6 +457,7 @@ impl Input {
                     ret.issuance_inflation_keys_comm = Some(comm)
                 }
             }
+            ret.issuance_asset_denomination = Some(txin.asset_issuance.asset_denomination);
 
             // Witness
             ret.issuance_keys_rangeproof = txin.witness.inflation_keys_rangeproof;
@@ -512,6 +518,7 @@ impl Input {
                 (_, Some(comm)) => confidential::Value::Confidential(comm),
                 (Some(x), None) => confidential::Value::Explicit(x),
             },
+            asset_denomination: self.issuance_asset_denomination.unwrap_or(8),
         }
     }
 }
@@ -695,6 +702,9 @@ impl Map for Input {
                         }
                         PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY => {
                             impl_pset_prop_insert_pair!(self.issuance_asset_entropy <= <raw_key: _> | <raw_value : [u8;32]>)
+                        }
+                        PSBT_ELEMENTS_IN_ISSUANCE_ASSET_DENOMINATION => {
+                            impl_pset_prop_insert_pair!(self.issuance_asset_denomination <= <raw_key: _> | <raw_value : u8>)
                         }
                         PSBT_ELEMENTS_IN_UTXO_RANGEPROOF => {
                             impl_pset_prop_insert_pair!(self.in_utxo_rangeproof <= <raw_key: _> | <raw_value : Box<RangeProof>>)
@@ -892,6 +902,10 @@ impl Map for Input {
         }
 
         impl_pset_get_pair! {
+            rv.push_prop(self.issuance_asset_denomination as <PSBT_ELEMENTS_IN_ISSUANCE_ASSET_DENOMINATION, _>)
+        }
+
+        impl_pset_get_pair! {
             rv.push_prop(self.in_utxo_rangeproof as <PSBT_ELEMENTS_IN_UTXO_RANGEPROOF, _>)
         }
 
@@ -974,6 +988,7 @@ impl Map for Input {
         merge!(issuance_inflation_keys_comm, self, other);
         merge!(issuance_blinding_nonce, self, other);
         merge!(issuance_asset_entropy, self, other);
+        merge!(issuance_asset_denomination, self, other);
         merge!(in_utxo_rangeproof, self, other);
         merge!(in_issuance_blind_value_proof, self, other);
         merge!(in_issuance_blind_inflation_keys_proof, self, other);

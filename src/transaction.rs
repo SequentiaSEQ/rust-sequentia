@@ -44,6 +44,8 @@ pub struct AssetIssuance {
     pub amount: confidential::Value,
     /// Amount of inflation keys to issue
     pub inflation_keys: confidential::Value,
+    /// Denomination of the asset
+    pub asset_denomination: u8,
 }
 
 impl AssetIssuance {
@@ -54,6 +56,7 @@ impl AssetIssuance {
             asset_entropy: [0; 32],
             amount: confidential::Value::Null,
             inflation_keys: confidential::Value::Null,
+            asset_denomination: 8,
         }
     }
 
@@ -62,8 +65,8 @@ impl AssetIssuance {
         self.amount.is_null() && self.inflation_keys.is_null()
     }
 }
-serde_struct_impl!(AssetIssuance, asset_blinding_nonce, asset_entropy, amount, inflation_keys);
-impl_consensus_encoding!(AssetIssuance, asset_blinding_nonce, asset_entropy, amount, inflation_keys);
+serde_struct_impl!(AssetIssuance, asset_blinding_nonce, asset_entropy, amount, inflation_keys, asset_denomination);
+impl_consensus_encoding!(AssetIssuance, asset_blinding_nonce, asset_entropy, amount, inflation_keys, asset_denomination);
 
 impl Default for AssetIssuance {
     fn default() -> Self {
@@ -2136,6 +2139,7 @@ mod tests {
                     ],
                 ).unwrap(),
                 inflation_keys: confidential::Value::Null,
+                asset_denomination: 8,
             }
         );
     }
