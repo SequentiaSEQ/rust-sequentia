@@ -163,7 +163,7 @@ pub struct AddressParams {
 
 impl AddressParams {
     /// The Liquid network address parameters.
-    pub const LIQUID: AddressParams = AddressParams {
+    pub const SEQUENTIA: AddressParams = AddressParams {
         p2pkh_prefix: 57,
         p2sh_prefix: 39,
         blinded_prefix: 12,
@@ -181,12 +181,12 @@ impl AddressParams {
     };
 
     /// The default liquid testnet network address parameters.
-    pub const LIQUID_TESTNET: AddressParams = AddressParams {
-        p2pkh_prefix: 36,
-        p2sh_prefix: 19,
-        blinded_prefix: 23,
-        bech_hrp: Hrp::parse_unchecked("tex"),
-        blech_hrp: Hrp::parse_unchecked("tlq"),
+    pub const SEQUENTIA_TESTNET: AddressParams = AddressParams {
+        p2pkh_prefix: 111,
+        p2sh_prefix: 196,
+        blinded_prefix: 70,
+        bech_hrp: Hrp::parse_unchecked("tb"),
+        blech_hrp: Hrp::parse_unchecked("tb"),
     };
 }
 
@@ -225,7 +225,7 @@ impl Address {
 
     /// Return if the address is for the Liquid network
     pub fn is_liquid(&self) -> bool {
-        self.params == &AddressParams::LIQUID
+        self.params == &AddressParams::SEQUENTIA
     }
 
     /// Creates a pay to (compressed) public key hash address from a public key
@@ -685,9 +685,9 @@ impl FromStr for Address {
 
     fn from_str(s: &str) -> Result<Address, AddressError> {
         // shorthands
-        let liq = &AddressParams::LIQUID;
+        let liq = &AddressParams::SEQUENTIA;
         let ele = &AddressParams::ELEMENTS;
-        let liq_test = &AddressParams::LIQUID_TESTNET;
+        let liq_test = &AddressParams::SEQUENTIA_TESTNET;
 
         let net_arr = [liq, ele, liq_test];
 
@@ -823,33 +823,33 @@ mod test {
         let script: Script = vec![1u8, 2, 42, 255, 196].into();
 
         let vectors = [
-            /* #00 */ Address::p2pkh(&pk, None, &AddressParams::LIQUID),
+            /* #00 */ Address::p2pkh(&pk, None, &AddressParams::SEQUENTIA),
             /* #01 */ Address::p2pkh(&pk, None, &AddressParams::ELEMENTS),
-            /* #02 */ Address::p2pkh(&pk, Some(blinder), &AddressParams::LIQUID),
+            /* #02 */ Address::p2pkh(&pk, Some(blinder), &AddressParams::SEQUENTIA),
             /* #03 */ Address::p2pkh(&pk, Some(blinder), &AddressParams::ELEMENTS),
-            /* #04 */ Address::p2sh(&script, None, &AddressParams::LIQUID),
+            /* #04 */ Address::p2sh(&script, None, &AddressParams::SEQUENTIA),
             /* #05 */ Address::p2sh(&script, None, &AddressParams::ELEMENTS),
-            /* #06 */ Address::p2sh(&script, Some(blinder), &AddressParams::LIQUID),
+            /* #06 */ Address::p2sh(&script, Some(blinder), &AddressParams::SEQUENTIA),
             /* #07 */
             Address::p2sh(&script, Some(blinder), &AddressParams::ELEMENTS),
-            /* #08 */ Address::p2wpkh(&pk, None, &AddressParams::LIQUID),
+            /* #08 */ Address::p2wpkh(&pk, None, &AddressParams::SEQUENTIA),
             /* #09 */ Address::p2wpkh(&pk, None, &AddressParams::ELEMENTS),
-            /* #10 */ Address::p2wpkh(&pk, Some(blinder), &AddressParams::LIQUID),
+            /* #10 */ Address::p2wpkh(&pk, Some(blinder), &AddressParams::SEQUENTIA),
             /* #11 */ Address::p2wpkh(&pk, Some(blinder), &AddressParams::ELEMENTS),
-            /* #12 */ Address::p2shwpkh(&pk, None, &AddressParams::LIQUID),
+            /* #12 */ Address::p2shwpkh(&pk, None, &AddressParams::SEQUENTIA),
             /* #13 */ Address::p2shwpkh(&pk, None, &AddressParams::ELEMENTS),
-            /* #14 */ Address::p2shwpkh(&pk, Some(blinder), &AddressParams::LIQUID),
+            /* #14 */ Address::p2shwpkh(&pk, Some(blinder), &AddressParams::SEQUENTIA),
             /* #15 */
             Address::p2shwpkh(&pk, Some(blinder), &AddressParams::ELEMENTS),
-            /* #16 */ Address::p2wsh(&script, None, &AddressParams::LIQUID),
+            /* #16 */ Address::p2wsh(&script, None, &AddressParams::SEQUENTIA),
             /* #17 */ Address::p2wsh(&script, None, &AddressParams::ELEMENTS),
-            /* #18 */ Address::p2wsh(&script, Some(blinder), &AddressParams::LIQUID),
+            /* #18 */ Address::p2wsh(&script, Some(blinder), &AddressParams::SEQUENTIA),
             /* #19 */
             Address::p2wsh(&script, Some(blinder), &AddressParams::ELEMENTS),
-            /* #20 */ Address::p2shwsh(&script, None, &AddressParams::LIQUID),
+            /* #20 */ Address::p2shwsh(&script, None, &AddressParams::SEQUENTIA),
             /* #21 */ Address::p2shwsh(&script, None, &AddressParams::ELEMENTS),
             /* #22 */
-            Address::p2shwsh(&script, Some(blinder), &AddressParams::LIQUID),
+            Address::p2shwsh(&script, Some(blinder), &AddressParams::SEQUENTIA),
             /* #23 */
             Address::p2shwsh(&script, Some(blinder), &AddressParams::ELEMENTS),
         ];
@@ -869,10 +869,10 @@ mod test {
             ("ert1qwhh2n5qypypm0eufahm2pvj8raj9zq5c27cysu", false, AddressParams::ELEMENTS),
             ("el1qq0umk3pez693jrrlxz9ndlkuwne93gdu9g83mhhzuyf46e3mdzfpva0w48gqgzgrklncnm0k5zeyw8my2ypfsmxh4xcjh2rse", true, AddressParams::ELEMENTS),
             // Liquid
-            ("GqiQRsPEyJLAsEBFB5R34KHuqxDNkG3zur", false, AddressParams::LIQUID),
-            ("VJLDwMVWXg8RKq4mRe3YFNTAEykVN6V8x5MRUKKoC3nfRnbpnZeiG3jygMC6A4Gw967GY5EotJ4Rau2F", true, AddressParams::LIQUID),
-            ("ex1q7gkeyjut0mrxc3j0kjlt7rmcnvsh0gt45d3fud", false, AddressParams::LIQUID),
-            ("lq1qqf8er278e6nyvuwtgf39e6ewvdcnjupn9a86rzpx655y5lhkt0walu3djf9cklkxd3ryld97hu8h3xepw7sh2rlu7q45dcew5", true, AddressParams::LIQUID),
+            ("GqiQRsPEyJLAsEBFB5R34KHuqxDNkG3zur", false, AddressParams::SEQUENTIA),
+            ("VJLDwMVWXg8RKq4mRe3YFNTAEykVN6V8x5MRUKKoC3nfRnbpnZeiG3jygMC6A4Gw967GY5EotJ4Rau2F", true, AddressParams::SEQUENTIA),
+            ("ex1q7gkeyjut0mrxc3j0kjlt7rmcnvsh0gt45d3fud", false, AddressParams::SEQUENTIA),
+            ("lq1qqf8er278e6nyvuwtgf39e6ewvdcnjupn9a86rzpx655y5lhkt0walu3djf9cklkxd3ryld97hu8h3xepw7sh2rlu7q45dcew5", true, AddressParams::SEQUENTIA),
         ];
 
         for &(a, blinded, ref params) in &addresses {
