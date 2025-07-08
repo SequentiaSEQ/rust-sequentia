@@ -168,6 +168,9 @@ const PSBT_ELEMENTS_IN_ASSET_PROOF: u8 = 0x14;
 /// Note that this does not indicate actual blinding status,
 /// but rather the expected blinding status prior to signing.
 const PSBT_ELEMENTS_IN_BLINDED_ISSUANCE: u8 = 0x15;
+/// Issuance Denomination: The value for number of decimals used for amount.
+/// Default 8, but could be less or more
+const PSBT_ELEMENTS_IN_ISSUANCE_ASSET_DENOMINATION: u8 = 0x7f;
 /// A key-value map for an input of the corresponding index in the unsigned
 /// transaction.
 #[derive(Clone, Debug, PartialEq)]
@@ -285,6 +288,8 @@ pub struct Input {
     pub issuance_blinding_nonce: Option<Tweak>,
     /// Issuance asset entropy
     pub issuance_asset_entropy: Option<[u8; 32]>,
+    /// Issuance asset denomination
+    pub issuance_asset_denomination: Option<u8>,
     /// input utxo rangeproof
     pub in_utxo_rangeproof: Option<Box<RangeProof>>,
     /// Proof that blinded issuance matches the commitment
@@ -356,6 +361,7 @@ impl Default for Input {
             issuance_inflation_keys_comm: None,
             issuance_blinding_nonce: None,
             issuance_asset_entropy: None,
+            issuance_asset_denomination: None,
             in_utxo_rangeproof: None,
             in_issuance_blind_value_proof: None,
             in_issuance_blind_inflation_keys_proof: None,
@@ -537,6 +543,7 @@ impl Input {
                     ret.issuance_inflation_keys_comm = Some(comm);
                 }
             }
+            ret.issuance_asset_denomination = Some(txin.asset_issuance.asset_denomination);
 
             // Witness
             ret.issuance_keys_rangeproof = txin.witness.inflation_keys_rangeproof;
@@ -597,6 +604,7 @@ impl Input {
                 (_, Some(comm)) => confidential::Value::Confidential(comm),
                 (Some(x), None) => confidential::Value::Explicit(x),
             },
+            asset_denomination: self.issuance_asset_denomination.unwrap_or(8),
         }
     }
 }
@@ -780,6 +788,9 @@ impl Map for Input {
                         }
                         PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY => {
                             impl_pset_prop_insert_pair!(self.issuance_asset_entropy <= <raw_key: _> | <raw_value : [u8;32]>);
+                        }
+                        PSBT_ELEMENTS_IN_ISSUANCE_ASSET_DENOMINATION => {
+                            impl_pset_prop_insert_pair!(self.issuance_asset_denomination <= <raw_key: _> | <raw_value : u8>)
                         }
                         PSBT_ELEMENTS_IN_UTXO_RANGEPROOF => {
                             impl_pset_prop_insert_pair!(self.in_utxo_rangeproof <= <raw_key: _> | <raw_value : Box<RangeProof>>);
@@ -1002,6 +1013,10 @@ impl Map for Input {
         }
 
         impl_pset_get_pair! {
+            rv.push_prop(self.issuance_asset_denomination as <PSBT_ELEMENTS_IN_ISSUANCE_ASSET_DENOMINATION, _>)
+        }
+
+        impl_pset_get_pair! {
             rv.push_prop(self.in_utxo_rangeproof as <PSBT_ELEMENTS_IN_UTXO_RANGEPROOF, _>)
         }
 
@@ -1104,6 +1119,7 @@ impl Map for Input {
         merge!(issuance_inflation_keys_comm, self, other);
         merge!(issuance_blinding_nonce, self, other);
         merge!(issuance_asset_entropy, self, other);
+        merge!(issuance_asset_denomination, self, other);
         merge!(in_utxo_rangeproof, self, other);
         merge!(in_issuance_blind_value_proof, self, other);
         merge!(in_issuance_blind_inflation_keys_proof, self, other);

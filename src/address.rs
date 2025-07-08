@@ -182,11 +182,11 @@ impl AddressParams {
 
     /// The default liquid testnet network address parameters.
     pub const LIQUID_TESTNET: AddressParams = AddressParams {
-        p2pkh_prefix: 36,
-        p2sh_prefix: 19,
-        blinded_prefix: 23,
-        bech_hrp: Hrp::parse_unchecked("tex"),
-        blech_hrp: Hrp::parse_unchecked("tlq"),
+        p2pkh_prefix: 111,
+        p2sh_prefix: 196,
+        blinded_prefix: 70,
+        bech_hrp: Hrp::parse_unchecked("tb"),
+        blech_hrp: Hrp::parse_unchecked("tb"),
     };
 }
 
